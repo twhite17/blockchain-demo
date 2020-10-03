@@ -1,0 +1,13 @@
+{
+    "server": {
+        "port": 8000,
+        "key":{
+            "private": "rsa.pem",
+            "public": "rsa_pub.pem"
+        }
+    },
+
+    "publicKeys": [
+
+    ]
+}
