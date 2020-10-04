@@ -45,6 +45,8 @@ const privateKey = fs.readFileSync("./conf/"+config.server.key.private).toString
 
 const blockDifficulty = 2;
 
+let globalData = {};
+
 let blocklist: Array<bc.Block> = [bc.createBlock(0, 0, {}, "", blockDifficulty)];
 
 app.use(express.json());
@@ -75,15 +77,49 @@ app.get("/api/blocks/get/:block", (req, res) => {
 // additionally instead of the request being tied to the server's private key, the user would provide their
 // private key. This is an entire other area of security which I don't want to implment right now ok?
 app.post("/api/blocks/new", (req, res) => {
-    console.log(req.body);
     let data = req.body;
     let newBlock = bc.createNextBlock(blocklist[blocklist.length - 1], data, bc.getTime());
     let encryptedNewBlock = bc.encryptBlock(newBlock, privateKey, config.server.name);
 
-    bc.newBlockRequest(encryptedNewBlock, "");
+    newBlockFunction(encryptedNewBlock);
     bc.newBlockRequestAll(encryptedNewBlock, config.hosts);
     res.send({message: "Done!"});
 })
+
+function newBlockFunction(encryptedNewBlock: bc.EncryptedBlock){
+    let res = {send: ({message}) => console.log(message)};
+    let source = config.hosts.filter(v => v.name === encryptedNewBlock.hostname)[0];
+    if (source === undefined) {res.send({message: "failed: untrusted host"}); return;};
+    let encryptedPublicKey = source.publicKey;
+
+    let newBlock = bc.decryptBlock(encryptedNewBlock, encryptedPublicKey, source.name);
+    let lastBlock = blocklist[blocklist.length - 1];
+
+    if (newBlock.previousHash !== lastBlock.hash) {res.send({message: "failed: not valid place in chain"}); return;};
+
+    newBlock = bc.reHashBlock(newBlock, blockDifficulty);
+
+    if(newBlock.timestamp <= lastBlock.timestamp) {res.send({message: "failed: bad timestamp"}); return;};
+
+    if(newBlock.hash === undefined) {res.send({message: "failed: unexpected error"}); return;};
+
+    if(bc.countZeros(newBlock.hash) !== blockDifficulty){res.send({message: "failed: bad hash"}); return;};
+
+    let valid = Object.keys(newBlock.data).reduce((pre, key) => pre && (key.slice(0, source.name.length) + '@' === source.name + '@'), true);
+
+    if(!valid) {
+        res.send({message:"failed: not valid data"}); 
+        console.log(`Rejected new block submitted by node ${source.name} due to incorrect permissions`)
+        return;
+    }
+
+    blocklist.push(newBlock);
+
+    globalData = {...globalData, ...newBlock.data};
+
+    console.log(`Successfully added Block number ${blocklist.length - 1} with data ${JSON.stringify(newBlock.data)}`);
+    
+}
 
 // for sending data between nodes
 app.post("/bpi/blocks/new", (req, res) => {
@@ -105,8 +141,21 @@ app.post("/bpi/blocks/new", (req, res) => {
 
     if(bc.countZeros(newBlock.hash) !== blockDifficulty){res.send({message: "failed: bad hash"}); return;};
 
+    let valid = Object.keys(newBlock.data).reduce((pre, key) => pre && (key.slice(0, source.name.length) + '@' === source.name + '@'), true);
+
+    if(!valid) {
+        res.send({message:"failed: not valid data"}); 
+        console.log(`Rejected new block submitted by node ${source.name} due to incorrect permissions`)
+        return;
+    }
+
     blocklist.push(newBlock);
-    console.log(`Successfully added Block number ${blocklist.length - 1} with data ${newBlock.data}`);
+
+    globalData = {...globalData, ...newBlock.data};
+
+    console.log(`Successfully added Block number ${blocklist.length - 1} with data ${JSON.stringify(newBlock.data)}`);
+
+    console.log(`Global State is now : ${JSON.stringify(globalData)}`)
     
 })
 

@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -38,6 +49,7 @@ var config = JSON.parse(fs_1.default.readFileSync(argv.config).toString());
 var publicKey = fs_1.default.readFileSync("./conf/" + config.server.key.public).toString();
 var privateKey = fs_1.default.readFileSync("./conf/" + config.server.key.private).toString();
 var blockDifficulty = 2;
+var globalData = {};
 var blocklist = [bc.createBlock(0, 0, {}, "", blockDifficulty)];
 app.use(express_1.default.json());
 app.get("/api/blocks/get/latest", function (req, res) {
@@ -63,13 +75,58 @@ app.get("/api/blocks/get/:block", function (req, res) {
 // additionally instead of the request being tied to the server's private key, the user would provide their
 // private key. This is an entire other area of security which I don't want to implment right now ok?
 app.post("/api/blocks/new", function (req, res) {
-    console.log(req.body);
     var data = req.body;
     var newBlock = bc.createNextBlock(blocklist[blocklist.length - 1], data, bc.getTime());
     var encryptedNewBlock = bc.encryptBlock(newBlock, privateKey, config.server.name);
-    bc.newBlockRequest(encryptedNewBlock, "");
+    newBlockFunction(encryptedNewBlock);
     bc.newBlockRequestAll(encryptedNewBlock, config.hosts);
+    res.send({ message: "Done!" });
 });
+function newBlockFunction(encryptedNewBlock) {
+    var res = { send: function (_a) {
+            var message = _a.message;
+            return console.log(message);
+        } };
+    var source = config.hosts.filter(function (v) { return v.name === encryptedNewBlock.hostname; })[0];
+    if (source === undefined) {
+        res.send({ message: "failed: untrusted host" });
+        return;
+    }
+    ;
+    var encryptedPublicKey = source.publicKey;
+    var newBlock = bc.decryptBlock(encryptedNewBlock, encryptedPublicKey, source.name);
+    var lastBlock = blocklist[blocklist.length - 1];
+    if (newBlock.previousHash !== lastBlock.hash) {
+        res.send({ message: "failed: not valid place in chain" });
+        return;
+    }
+    ;
+    newBlock = bc.reHashBlock(newBlock, blockDifficulty);
+    if (newBlock.timestamp <= lastBlock.timestamp) {
+        res.send({ message: "failed: bad timestamp" });
+        return;
+    }
+    ;
+    if (newBlock.hash === undefined) {
+        res.send({ message: "failed: unexpected error" });
+        return;
+    }
+    ;
+    if (bc.countZeros(newBlock.hash) !== blockDifficulty) {
+        res.send({ message: "failed: bad hash" });
+        return;
+    }
+    ;
+    var valid = Object.keys(newBlock.data).reduce(function (pre, key) { return pre && (key.slice(0, source.name.length) + '@' === source.name + '@'); }, true);
+    if (!valid) {
+        res.send({ message: "failed: not valid data" });
+        console.log("Rejected new block submitted by node " + source.name + " due to incorrect permissions");
+        return;
+    }
+    blocklist.push(newBlock);
+    globalData = __assign(__assign({}, globalData), newBlock.data);
+    console.log("Successfully added Block number " + (blocklist.length - 1) + " with data " + JSON.stringify(newBlock.data));
+}
 // for sending data between nodes
 app.post("/bpi/blocks/new", function (req, res) {
     var encryptedNewBlock = req.body;
@@ -103,8 +160,16 @@ app.post("/bpi/blocks/new", function (req, res) {
         return;
     }
     ;
+    var valid = Object.keys(newBlock.data).reduce(function (pre, key) { return pre && (key.slice(0, source.name.length) + '@' === source.name + '@'); }, true);
+    if (!valid) {
+        res.send({ message: "failed: not valid data" });
+        console.log("Rejected new block submitted by node " + source.name + " due to incorrect permissions");
+        return;
+    }
     blocklist.push(newBlock);
-    console.log("Successfully added Block number " + (blocklist.length - 1) + " with data " + newBlock.data);
+    globalData = __assign(__assign({}, globalData), newBlock.data);
+    console.log("Successfully added Block number " + (blocklist.length - 1) + " with data " + JSON.stringify(newBlock.data));
+    console.log("Global State is now : " + JSON.stringify(globalData));
 });
 app.listen(config.server.port, function () {
     console.log("starting server at localhost on port " + config.server.port);

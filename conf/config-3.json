@@ -18,6 +18,11 @@
             "name": "server2",
             "address": "http://localhost:8001",
             "publicKey": "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCk6Jp9E/9HnBtcHPfkaEwMkZjZ\nsysjSJtU2ZpftkP4cIDPTqRH3v3hqXCj4AoWoEqOhDUA9r4lyHIcH/DFEE5aHPDQ\nQX7f6XOQxNL18V+6pwd+tcuGTD8U4RRwJ34h0ZoYpQ3j9CM67ysQAMD5EtM2BDxk\n5UUuzERMIx8qRKDrMQIDAQAB\n-----END PUBLIC KEY-----"
+        },
+        {
+            "name": "server3",
+            "address": "http://localhost:8002",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDKuuqdnqronLO3d3R+AE4j2pZj\n64myAU6t43ivI0CPywMZU57PBihSapzkB9N3Z2MOwBkWdV/3Fy0QCNJMQXvoCVcU\nFegGCdZ3+cJHtn1lESQty7VquINOb4S3s9THQK2Oy4LZ457Z+2shO9CnoGMwyegt\n52W63F6c3737gCmzPwIDAQAB\n-----END PUBLIC KEY-----"
         }
     ]
 }
