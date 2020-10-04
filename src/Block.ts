@@ -76,7 +76,7 @@ export function createBlock(
     return block;
 }
 
-const countZeros = (str: string) : number => {
+export const countZeros = (str: string) : number => {
     let n = 0;
     let i = 0;
     while(str[i] == '0'){n++; i++;}

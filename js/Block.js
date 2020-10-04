@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reHashBlock = exports.validateBlock = exports.createNextBlock = exports.createBlock = exports.hashBlock = exports.getTime = exports.hashFunction = void 0;
+exports.reHashBlock = exports.validateBlock = exports.createNextBlock = exports.countZeros = exports.createBlock = exports.hashBlock = exports.getTime = exports.hashFunction = void 0;
 var sha256_1 = __importDefault(require("crypto-js/sha256"));
 // provides an easy method to modify the hashing algorithm used.
 exports.hashFunction = function (data) { return sha256_1.default(data).toString(); };
@@ -61,7 +61,7 @@ function createBlock(index, timestamp, data, previousHash, difficulty) {
     return block;
 }
 exports.createBlock = createBlock;
-var countZeros = function (str) {
+exports.countZeros = function (str) {
     var n = 0;
     var i = 0;
     while (str[i] == '0') {
@@ -74,7 +74,7 @@ function createNextBlock(block, data, timestamp) {
     var hash = block.hash, index = block.index;
     if (!hash)
         throw new Error("Error creating next block, \"hash\" cannot be null.");
-    var newBlock = createBlock(index + 1, timestamp, data, hash, countZeros(hash));
+    var newBlock = createBlock(index + 1, timestamp, data, hash, exports.countZeros(hash));
     return newBlock;
 }
 exports.createNextBlock = createNextBlock;
@@ -90,7 +90,7 @@ function reHashBlock(block, difficulty) {
     if (!difficulty) {
         if (!block.hash)
             throw new Error("Cannot re-hash block, don't know the difficulty value required.");
-        difficulty = countZeros(block.hash);
+        difficulty = exports.countZeros(block.hash);
     }
     var index = block.index, timestamp = block.timestamp, data = block.data, previousHash = block.previousHash;
     return __assign(__assign({}, block), { hash: createBlock(index, timestamp, data, previousHash, difficulty).hash });

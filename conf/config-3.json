@@ -1,0 +1,23 @@
+{
+    "server": {
+        "port": 8002,
+        "key":{
+            "private": "rsa_3.pem",
+            "public": "rsa_pub_3.pem"
+        },
+        "name": "server3"
+    },
+
+    "hosts": [
+        {
+            "name": "server1", 
+            "address": "http://localhost:8000", 
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCz0qwsQXYk73xhLzPVZR5CVglP\n2fMNJQqRZy0neW/7c2+/1569qpkscSmocAiUAaoVnCVhp9CrO/63Anp9wmsbVS6E\nyhgQ7B8nSepx76wV7lk1OlriHdSyLrHCq8he+Ae5ZZWct0SVDVMGLv4tespdA+Yp\noUUqTE/kdif1hrSlNQIDAQAB\n-----END PUBLIC KEY-----"
+        },
+        {
+            "name": "server2",
+            "address": "http://localhost:8001",
+            "publicKey": "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCk6Jp9E/9HnBtcHPfkaEwMkZjZ\nsysjSJtU2ZpftkP4cIDPTqRH3v3hqXCj4AoWoEqOhDUA9r4lyHIcH/DFEE5aHPDQ\nQX7f6XOQxNL18V+6pwd+tcuGTD8U4RRwJ34h0ZoYpQ3j9CM67ysQAMD5EtM2BDxk\n5UUuzERMIx8qRKDrMQIDAQAB\n-----END PUBLIC KEY-----"
+        }
+    ]
+}
